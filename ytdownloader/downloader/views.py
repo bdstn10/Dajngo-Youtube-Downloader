@@ -1,29 +1,43 @@
-# importing all the required modules 
 from io import BytesIO
 from django.http import FileResponse
-from django.shortcuts import render, redirect 
-import os
-from pytube import *
-import tempfile
+from django.views.generic import View
+from pytube import YouTube
+from django.shortcuts import render,redirect
 
-# defining function 
-def youtube(request): 
-	# checking whether request.method is post or not 
-	if request.method == 'POST': 
-		# getting link from frontend 
-		link = request.POST['link'] 
-		video = YouTube(link) 
+class home(View):
+    def __init__(self,url=None):
+        self.url = url
+    def get(self,request):
+        return render(request,'downloader/youtube.html')    
+    def post(self,request):
+        # for fetching the video
+        if request.POST.get('fetch-vid'):
+            self.url = request.POST.get('given_url')
+            video = YouTube(self.url)
+            vidTitle,vidThumbnail = video.title,video.thumbnail_url
+            qual,stream = [],[]
+            for vid in video.streams.filter(progressive=True):
+                qual.append(vid.resolution)
+                stream.append(vid)
+            context = {'vidTitle':vidTitle,'vidThumbnail':vidThumbnail,
+                        'qual':qual,'stream':stream,
+                        'url':self.url}
+            return render(request,'downloader/youtube.html',context)
 
-		# setting video resolution 
-		stream = video.streams.get_lowest_resolution() 
-		
-		# write media stream to buffer
-		response_file = BytesIO()
-		stream.stream_to_buffer(response_file)
-		response_file.seek(0)
-  
-		# Create FileResponse with the writed buffer
-		response = FileResponse(response_file, as_attachment=True)
-		response['Content-Disposition'] = f'attachment; filename={stream.default_filename}'
-		return response
-	return render(request, 'downloader/youtube.html')
+        # for downloading the video
+        elif request.POST.get('download-vid'):
+            self.url = request.POST.get('given_url')
+            video = YouTube(self.url)
+            stream = [x for x in video.streams.filter(progressive=True)]
+            video_qual = video.streams[int(request.POST.get('download-vid')) - 1]
+            
+            response_file = BytesIO()
+            video_qual.stream_to_buffer(response_file)
+            response_file.seek(0)
+            
+            response = FileResponse(response_file, as_attachment=True)
+            response['Content-Disposition'] = f'attachment; filename={video_qual.default_filename}'
+            return response
+            
+
+        return render(request,'downloader/youtube.html')
