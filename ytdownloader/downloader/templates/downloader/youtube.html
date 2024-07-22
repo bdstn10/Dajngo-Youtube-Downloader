@@ -1,5 +1,8 @@
-<!DOCTYPE html>
+{% load static %}
 <html>
+    {% load pwa %}
+    {% progressive_web_app_meta %}
+<link rel="manifest" href="manifest.json">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
