@@ -35,8 +35,8 @@ class home(View):
             video_qual.stream_to_buffer(response_file)
             response_file.seek(0)
             
-            response = FileResponse(response_file, as_attachment=True)
-            response['Content-Disposition'] = f'attachment; filename={video_qual.default_filename}'
+            response = FileResponse(response_file, as_attachment=True, filename=video_qual.default_filename)
+            # response['Content-Disposition'] = f'attachment; filename={video_qual.default_filename}'
             return response
             
 
